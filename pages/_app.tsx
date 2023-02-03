@@ -6,7 +6,12 @@ const roboto = Roboto({
   subsets: ["latin"],
 });
 
-export default function App({ Component, pageProps }) {
+interface Props {
+  Component: React.ComponentType;
+  pageProps: Record<string, any>;
+}
+
+export default function App({ Component, pageProps }: Props) {
   return (
     <main className={roboto.className}>
       <Component {...pageProps} />
