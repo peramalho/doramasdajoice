@@ -38,11 +38,12 @@ const Title = styled.h2`
 interface Props {
   title: string;
   imgSrc: string;
+  handleClick: () => void;
 }
 
-export default function Card({ title, imgSrc }: Props) {
+export default function Card({ title, imgSrc, handleClick }: Props) {
   return (
-    <Wrapper>
+    <Wrapper onClick={handleClick}>
       <Image src={imgSrc} alt={`${title} image`} />
       <Title title={title}>{title}</Title>
     </Wrapper>

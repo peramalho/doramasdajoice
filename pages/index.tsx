@@ -1,6 +1,8 @@
+import { useState, useMemo } from "react";
 import styled from "styled-components";
 import localFont from "@next/font/local";
 import Card from "../components/card";
+import Modal from "../components/modal";
 
 const kgHappyFont = localFont({ src: "../fonts/kg-happy.ttf" });
 const loftyGoalsFont = localFont({ src: "../fonts/lofty-goals.otf" });
@@ -66,20 +68,32 @@ const Item = styled.div`
   align-items: center;
 `;
 
-type Series = Array<{
+export type Show = {
+  id: number;
   name: string;
+  overview: string;
   poster_path: string;
-}>;
+  first_air_date: string;
+};
 
 interface ResponseData {
-  results: Series;
+  results: Array<Show>;
 }
 
 interface Props {
-  series: Series;
+  shows: Array<Show>;
 }
 
-export default function Home({ series }: Props) {
+export default function Home({ shows }: Props) {
+  const [selectedShowId, setSelectedShowId] = useState<number | null>(null);
+
+  const handleSelectShow = (id: number) => setSelectedShowId(id);
+  const handleDeselectShow = () => setSelectedShowId(null);
+
+  const selectedShow = useMemo(() => {
+    return shows.find((show) => show.id === selectedShowId);
+  }, [shows, selectedShowId]);
+
   return (
     <div>
       <Header>
@@ -89,15 +103,22 @@ export default function Home({ series }: Props) {
       </Header>
       <PageWrapper>
         <Grid>
-          {series.map((item) => (
-            <Item key={item.name}>
+          {shows.map((show) => (
+            <Item key={show.name}>
               <Card
-                title={item.name}
-                imgSrc={`https://image.tmdb.org/t/p/w300/${item.poster_path}`}
+                title={show.name}
+                imgSrc={`https://image.tmdb.org/t/p/w300/${show.poster_path}`}
+                handleClick={() => handleSelectShow(show.id)}
               />
             </Item>
           ))}
         </Grid>
+
+        <Modal
+          isOpen={Boolean(selectedShowId)}
+          onClose={handleDeselectShow}
+          show={selectedShow}
+        />
       </PageWrapper>
     </div>
   );
@@ -118,6 +139,6 @@ export async function getStaticProps() {
   const data: ResponseData = await res.json();
 
   return {
-    props: { series: data.results },
+    props: { shows: data.results },
   };
 }
