@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react";
 import styled from "styled-components";
 import localFont from "@next/font/local";
+import Head from "next/head";
 import Card from "../components/card";
 import Modal from "../components/modal";
+import Image from "next/image";
 
 const kgHappyFont = localFont({ src: "../fonts/kg-happy.ttf" });
 const loftyGoalsFont = localFont({ src: "../fonts/lofty-goals.otf" });
@@ -38,6 +40,16 @@ const Person = styled.span`
 
   @media (max-width: 768px) {
     font-size: 3.4rem;
+  }
+`;
+
+const HeartImage = styled(Image).attrs({ width: 80, height: 80 })`
+  margin-left: 14px;
+  margin-bottom: 8px;
+
+  @media (max-width: 768px) {
+    width: 40px;
+    height: 40px;
   }
 `;
 
@@ -96,9 +108,14 @@ export default function Home({ shows }: Props) {
 
   return (
     <div>
+      <Head>
+        <title>Doramas da Joice</title>
+        <link rel="shortcut icon" href="/korean-heart.ico" />
+      </Head>
       <Header>
         <Title className={kgHappyFont.className}>
           Doramas da <Person className={loftyGoalsFont.className}>Joice</Person>
+          <HeartImage src="/korean-heart.svg" alt="korean-heart" />
         </Title>
       </Header>
       <PageWrapper>

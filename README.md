@@ -1,6 +1,14 @@
-# Joice Dorameira
+# Doramas da Joice
 
-A collection with Joice's best doramas.
+A collection with Joice's favorite korean dramas.
+
+## Installation
+
+Requires Node.js.
+
+```
+npm install
+```
 
 ## Production
 
