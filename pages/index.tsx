@@ -2,10 +2,19 @@ import { useState, useMemo } from "react";
 import styled from "styled-components";
 import localFont from "@next/font/local";
 import Head from "next/head";
-import Card from "../components/card";
-import Modal from "../components/modal";
 import Image from "next/image";
+import { Roboto } from "@next/font/google";
+import Card from "../components/card";
+import ShowModal from "../components/show-modal";
+import LoginModal from "../components/login-modal";
+import AddModal from "../components/add-modal";
+import UnsavedBanner from "../components/unsaved-banner";
 
+const listId = "8238048";
+const roboto = Roboto({
+  weight: "400",
+  subsets: ["latin"],
+});
 const kgHappyFont = localFont({ src: "../fonts/kg-happy.ttf" });
 const loftyGoalsFont = localFont({ src: "../fonts/lofty-goals.otf" });
 
@@ -15,6 +24,7 @@ const Header = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
 
   @media (max-width: 768px) {
     height: 150px;
@@ -50,6 +60,28 @@ const HeartImage = styled(Image).attrs({ width: 80, height: 80 })`
   @media (max-width: 768px) {
     width: 40px;
     height: 40px;
+  }
+`;
+
+const Button = styled.button.attrs({ className: roboto.className })`
+  position: absolute;
+  text-align: right;
+  top: 0;
+  right: 0;
+  outline: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  background: inherit;
+  color: #fff;
+  padding: 10px;
+
+  &:hover {
+    opacity: 0.8;
+  }
+
+  @media (max-width: 768px) {
+    font-size: 0.8rem;
   }
 `;
 
@@ -97,14 +129,62 @@ interface Props {
 }
 
 export default function Home({ shows }: Props) {
+  const [currentShows, setCurrentShows] = useState(shows);
   const [selectedShowId, setSelectedShowId] = useState<number | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [unsavedChanges, setUnsavedChanges] = useState(false);
 
   const handleSelectShow = (id: number) => setSelectedShowId(id);
-  const handleDeselectShow = () => setSelectedShowId(null);
+
+  const handleAddShow = (show: Show) => {
+    setCurrentShows((shows) => [show, ...shows]);
+    setUnsavedChanges(true);
+  };
+
+  const handleDeleteShow = (id: number) => {
+    setCurrentShows((shows) => shows.filter((show) => show.id !== id));
+    setUnsavedChanges(true);
+  };
+
+  const handleSaveShows = async () => {
+    try {
+      await fetch(`https://api.themoviedb.org/4/list/${listId}/clear`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_API_KEY_V4}`,
+        },
+      });
+
+      const items = currentShows.map((show) => ({
+        media_type: "tv",
+        media_id: show.id,
+      }));
+
+      await fetch(`https://api.themoviedb.org/4/list/${listId}/items`, {
+        method: "POST",
+        body: JSON.stringify({
+          items: items,
+        }),
+        headers: {
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_API_KEY_V4}`,
+        },
+      });
+
+      setUnsavedChanges(false);
+    } catch (err) {
+      console.log("Doramas não puderam ser salvos. Tente novamente");
+    }
+  };
+
+  const handleLogout = () => {
+    setToken(null);
+  };
 
   const selectedShow = useMemo(() => {
-    return shows.find((show) => show.id === selectedShowId);
-  }, [shows, selectedShowId]);
+    return currentShows.find((show) => show.id === selectedShowId);
+  }, [currentShows, selectedShowId]);
 
   return (
     <div>
@@ -112,29 +192,56 @@ export default function Home({ shows }: Props) {
         <title>Doramas da Joice</title>
         <link rel="shortcut icon" href="/korean-heart.ico" />
       </Head>
+
       <Header>
         <Title className={kgHappyFont.className}>
           Doramas da <Person className={loftyGoalsFont.className}>Joice</Person>
           <HeartImage src="/korean-heart.svg" alt="korean-heart" />
         </Title>
+        {Boolean(token) ? (
+          <Button onClick={handleLogout}>Sair</Button>
+        ) : (
+          <Button onClick={() => setIsLoginModalOpen(true)}>Login</Button>
+        )}
       </Header>
+      {Boolean(token) && unsavedChanges && (
+        <UnsavedBanner handleSaveShows={handleSaveShows} />
+      )}
       <PageWrapper>
         <Grid>
-          {shows.map((show) => (
-            <Item key={show.name}>
+          {Boolean(token) && (
+            <Card newShow handleClick={() => setIsAddModalOpen(true)} />
+          )}
+          {currentShows.map((show) => (
+            <Item key={show.id}>
               <Card
+                id={show.id}
                 title={show.name}
                 imgSrc={`https://image.tmdb.org/t/p/w300/${show.poster_path}`}
                 handleClick={() => handleSelectShow(show.id)}
+                handleDeleteShow={handleDeleteShow}
+                isAuthenticated={Boolean(token)}
               />
             </Item>
           ))}
         </Grid>
 
-        <Modal
+        <ShowModal
           isOpen={Boolean(selectedShowId)}
-          onClose={handleDeselectShow}
+          onClose={() => setSelectedShowId(null)}
           show={selectedShow}
+        />
+
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          setToken={setToken}
+        />
+
+        <AddModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          handleAddShow={handleAddShow}
         />
       </PageWrapper>
     </div>
@@ -142,14 +249,11 @@ export default function Home({ shows }: Props) {
 }
 
 export async function getStaticProps() {
-  const listId = "8238048";
-
   const res = await fetch(
     `https://api.themoviedb.org/4/list/${listId}?language=pt-BR`,
     {
       headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.TMDB_API_KEY}`,
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_API_KEY_V4}`,
       },
     }
   );
@@ -157,5 +261,6 @@ export async function getStaticProps() {
 
   return {
     props: { shows: data.results },
+    revalidate: 60,
   };
 }
