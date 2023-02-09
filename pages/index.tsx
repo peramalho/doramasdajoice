@@ -6,8 +6,24 @@ import Card from "../components/card";
 import Modal from "../components/modal";
 import Image from "next/image";
 
+<<<<<<< Updated upstream
 const kgHappyFont = localFont({ src: "../fonts/kg-happy.ttf" });
 const loftyGoalsFont = localFont({ src: "../fonts/lofty-goals.otf" });
+=======
+const listId = "8238048";
+const roboto = Roboto({
+  weight: "400",
+  subsets: ["latin"],
+});
+const kgHappyFont = localFont({
+  src: "../fonts/kg-happy.ttf",
+  display: "swap",
+});
+const loftyGoalsFont = localFont({
+  src: "../fonts/lofty-goals.otf",
+  display: "swap",
+});
+>>>>>>> Stashed changes
 
 const Header = styled.div`
   background: #e63946;
