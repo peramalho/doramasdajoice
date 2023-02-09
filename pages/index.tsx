@@ -15,8 +15,14 @@ const roboto = Roboto({
   weight: "400",
   subsets: ["latin"],
 });
-const kgHappyFont = localFont({ src: "../fonts/kg-happy.ttf" });
-const loftyGoalsFont = localFont({ src: "../fonts/lofty-goals.otf" });
+const kgHappyFont = localFont({
+  src: "../fonts/kg-happy.ttf",
+  display: "swap",
+});
+const loftyGoalsFont = localFont({
+  src: "../fonts/lofty-goals.otf",
+  display: "swap",
+});
 
 const Header = styled.div`
   background: #e63946;
