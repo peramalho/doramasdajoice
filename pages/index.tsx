@@ -4,6 +4,7 @@ import localFont from "@next/font/local";
 import Head from "next/head";
 import Image from "next/image";
 import { Roboto } from "@next/font/google";
+import { PrismaClient } from "@prisma/client";
 import Card from "../components/card";
 import ShowModal from "../components/show-modal";
 import LoginModal from "../components/login-modal";
@@ -156,26 +157,11 @@ export default function Home({ shows }: Props) {
 
   const handleSaveShows = async () => {
     try {
-      await fetch(`https://api.themoviedb.org/4/list/${listId}/clear`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_API_KEY_V4}`,
-        },
-      });
-
-      const items = currentShows.map((show) => ({
-        media_type: "tv",
-        media_id: show.id,
-      }));
-
-      await fetch(`https://api.themoviedb.org/4/list/${listId}/items`, {
+      await fetch(`api/show`, {
         method: "POST",
         body: JSON.stringify({
-          items: items,
+          shows: currentShows,
         }),
-        headers: {
-          Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_API_KEY_V4}`,
-        },
       });
 
       setUnsavedChanges(false);
@@ -255,18 +241,26 @@ export default function Home({ shows }: Props) {
 }
 
 export async function getStaticProps() {
-  const res = await fetch(
-    `https://api.themoviedb.org/4/list/${listId}?language=pt-BR`,
-    {
-      headers: {
-        Authorization: `Bearer ${process.env.NEXT_PUBLIC_TMDB_API_KEY_V4}`,
-      },
-    }
-  );
-  const data: ResponseData = await res.json();
+  const prisma = new PrismaClient();
+
+  async function getShows() {
+    const shows = await prisma.show.findMany();
+
+    return shows as Array<Show>;
+  }
+
+  let shows: Array<Show> = [];
+  try {
+    shows = await getShows();
+    await prisma.$disconnect();
+  } catch (err) {
+    console.error(err);
+    await prisma.$disconnect();
+    process.exit(1);
+  }
 
   return {
-    props: { shows: data.results },
+    props: { shows },
     revalidate: 60,
   };
 }
